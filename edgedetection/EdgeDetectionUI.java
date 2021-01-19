@@ -3,21 +3,22 @@ package edgedetection;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.nio.DoubleBuffer;
 
 import static edgedetection.EdgeDetection.*;
+import static edgedetection.EdgeDetection.higherThreshold;
 
 public class EdgeDetectionUI {
 
-    private static final int FRAME_WIDTH = 1000;
+    private static final int FRAME_WIDTH = 1200;
     private static final int FRAME_HEIGHT = 600;
     private static final Font sansSerifBold = new Font("SansSerif", Font.BOLD, 22);
-    private  ImagePanel sourceImage = new ImagePanel(".\\Obrazek1.jpg");
-    private  ImagePanel destImage = new ImagePanel(".\\Obrazek1.jpg");
+    private  ImagePanel sourceImage = new ImagePanel(".\\Obraz1.jpg");
+    private  ImagePanel destImage = new ImagePanel(".\\Obraz1.jpg");
     private JPanel mainPanel;
     private final EdgeDetection edgeDetection;
 
@@ -45,6 +46,7 @@ public class EdgeDetectionUI {
         chooseButton.setFont(sansSerifBold);
 
         JPanel northPanel = new JPanel();
+
         JComboBox filterChoice = new JComboBox();
         filterChoice.addItem(Horizontal);
         filterChoice.addItem(Vertical);
@@ -52,15 +54,58 @@ public class EdgeDetectionUI {
         filterChoice.addItem(SobelHorizontal);
         filterChoice.addItem(ScharrVertical);
         filterChoice.addItem(ScharrHorizontal);
-        filterChoice.setFont(sansSerifBold);
         filterChoice.addItem(CannyEdgeDetection);
         filterChoice.setFont(sansSerifBold);
+
+
+        JTextField lowerThreshold= new JTextField();
+        lowerThreshold.setPreferredSize(new Dimension(250, 40));
+        lowerThreshold.setFont(sansSerifBold);
+        lowerThreshold.setText("Canny lower threshold");
+        lowerThreshold.setEditable(false);
+
+        lowerThreshold.addFocusListener(new FocusListener() {
+            @Override public void focusLost(final FocusEvent pE) {}
+            @Override public void focusGained(final FocusEvent pE) {
+                lowerThreshold.selectAll();
+            }
+        });
+
+        JTextField higherThreshold= new JTextField();
+        higherThreshold.setPreferredSize(new Dimension(250, 40));
+        higherThreshold.setFont(sansSerifBold);;
+        higherThreshold.setText("Canny higher threshold");
+        higherThreshold.setEditable(false);
+        higherThreshold.addFocusListener(new FocusListener() {
+            @Override public void focusLost(final FocusEvent pE) {}
+            @Override public void focusGained(final FocusEvent pE) {
+                higherThreshold.selectAll();
+            }
+        });
+
+        filterChoice.addActionListener (new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                if(((String) filterChoice.getSelectedItem()).equals(CannyEdgeDetection)){
+                    lowerThreshold.setEditable(true);
+                    higherThreshold.setEditable(true);
+
+                }
+                else{
+                    lowerThreshold.setEditable(false);
+                    higherThreshold.setEditable(false);
+                    lowerThreshold.setText("Canny lower threshold");
+                    higherThreshold.setText("Canny higher threshold");
+                }
+            }
+        });
 
         JButton detect = new JButton("Wykryj krawedzie");
         detect.setFont(sansSerifBold);
 
         northPanel.add(filterChoice);
         northPanel.add(chooseButton);
+        northPanel.add(lowerThreshold);
+        northPanel.add(higherThreshold);
         northPanel.add(detect);
 
         chooseButton.addActionListener(event -> {
@@ -84,7 +129,18 @@ public class EdgeDetectionUI {
         detect.addActionListener(event -> {
             try {
                 BufferedImage bufferedImage = ImageIO.read(new File(sourceImage.getcurrentpath()));
-                File mixedFile = edgeDetection.detectEdges(bufferedImage, (String) filterChoice.getSelectedItem());
+                double lowerThresholdValue = readThreshold(lowerThreshold.getText());
+                double higherThresholdValue = readThreshold(higherThreshold.getText());
+                if ((lowerThresholdValue == -1.0) && (filterChoice.getSelectedItem().equals(CannyEdgeDetection))) {
+                    lowerThresholdValue = edgeDetection.lowerThreshold;
+                    lowerThreshold.setText(String.valueOf(lowerThresholdValue));
+                }
+                if ((higherThresholdValue == -1.0) && (filterChoice.getSelectedItem().equals(CannyEdgeDetection))) {
+                    higherThresholdValue = edgeDetection.higherThreshold;
+                    higherThreshold.setText(String.valueOf(higherThresholdValue));
+                }
+                File mixedFile = edgeDetection.detectEdges(bufferedImage, (String) filterChoice.getSelectedItem(),
+                        lowerThresholdValue, higherThresholdValue);
                 destImage = new ImagePanel(mixedFile.getAbsolutePath());
                 mainPanel.removeAll();
                 mainPanel.add(sourceImage);
@@ -99,6 +155,15 @@ public class EdgeDetectionUI {
         return northPanel;
     }
 
+    private double readThreshold(String text){
+        try{
+            double doubleTreshold = Double.parseDouble(text);
+            return doubleTreshold;
+        } catch (NumberFormatException nfe)
+        {
+            return -1.0;
+        }
+    }
     private JFrame createMainFrame() {
         JFrame mainFrame = new JFrame();
         mainFrame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);

@@ -8,13 +8,16 @@ import java.io.IOException;
 import java.time.LocalTime;
 
 public class Canny {
-
-    private static final double higherThreshold = 0.15*294;
-    private static final double lowerThreshold = 0.05*294;
-
     private static final double[][] xGradientKernel = {{-1, 0, 1}, {-2, 0, 2}, {-1, 0, 1}};
     private static final double[][] yGradientKernel = {{1, 2, 1}, {0, 0, 0}, {-1, -2, -1}};
     public static final double[][] gaussianKernel = {{2./159, 4./159, 5./159, 4./159, 2./159}, {4./159, 9./159, 12./159, 9./159, 4./159}, {5./159, 12./159, 15./159, 12./159, 5./159}, {4./159, 9./159, 12./159, 9./159, 4./159}, {2./159, 4./159, 5./159, 4./159, 2./159}};
+    private double lowerThreshold;
+    private double higherThreshold;
+
+    public Canny(double lowerThresholdValue, double higherThresholdValue) {
+        this.lowerThreshold = lowerThresholdValue;
+        this.higherThreshold = higherThresholdValue;
+    }
 
 
     public File detectEdges(BufferedImage sourceImage) throws IOException {
@@ -219,7 +222,7 @@ public class Canny {
         int[][] direction = new int[width][height];
         for (int i = 0; i < width; i++) {
             for (int j = 0; j < height; j++) {
-                double pixelDirection = Math.atan2(xGradient[i][j], yGradient[i][j]);
+                double pixelDirection = Math.atan2(yGradient[i][j], xGradient[i][j]);
                 roundedDirection = roundDirection(pixelDirection);
                 direction[i][j] = roundedDirection;
             }
@@ -273,12 +276,12 @@ public class Canny {
         for (int i = 1; i < width-1; ++i) {
             for (int j = 1; j < height-1; ++j) {
                 if (direction[i][j] == 0) {
-                    if ((magnitude[i][j] > magnitude[i-1][j]) && (magnitude[i][j] > magnitude[i+1][j])) {
+                    if ((magnitude[i][j] > magnitude[i-1][j]) && (magnitude[i][j] >   magnitude[i+1][j])) {
                         suppressedMagnitude[i][j] = magnitude[i][j];
                     }
                 }
                 else if (direction[i][j] == 45) {
-                    if ((magnitude[i][j] > magnitude[i-1][j+1]) && (magnitude[i][j] > magnitude[i+1][j-1])) {
+                    if ((magnitude[i][j] > magnitude[i-1][j-1]) && (magnitude[i][j] > magnitude[i+1][j+1])) {
                         suppressedMagnitude[i][j] = magnitude[i][j];
                     }
                 }
@@ -288,7 +291,7 @@ public class Canny {
                     }
                 }
                 else if (direction[i][j] == 135) {
-                    if ((magnitude[i][j] > magnitude[i+1][j+1]) && (magnitude[i][j] > magnitude[i-1][j-1])) {
+                    if ((magnitude[i][j] > magnitude[i-1][j+1]) && (magnitude[i][j] > magnitude[i+1][j-1])) {
                         suppressedMagnitude[i][j] = magnitude[i][j];
                     }
                 }

@@ -17,7 +17,8 @@ public class EdgeDetection {
     public static final String ScharrVertical = "Scharr Vertical Filter";
     public static final String ScharrHorizontal = "Scharr Horizontal Filter";
     public static final String CannyEdgeDetection = "Canny Algorithm";
-
+    public static final double higherThreshold = 0.15*294;
+    public static final double lowerThreshold = 0.03*294;
     private static final double[][] VerticalMask = {{1, 0, -1}, {1, 0, -1}, {1, 0, -1}};
     private static final double[][] HorizontalMask = {{1, 1, 1}, {0, 0, 0}, {-1, -1, -1}};
     private static final double[][] SobelMaskVertical = {{1, 0, -1}, {2, 0, -2}, {1, 0, -1}};
@@ -31,12 +32,13 @@ public class EdgeDetection {
         maskMap = buildMaskMap();
     }
 
-    public File detectEdges(BufferedImage bufferedImage, String selectedFilter) throws IOException {
+    public File detectEdges(BufferedImage bufferedImage, String selectedFilter, double lowerThresholdValue,
+                            double higherThresholdValue) throws IOException {
         double[][] mixedPixels = new double[bufferedImage.getWidth()][bufferedImage.getHeight()];
         File output = null;
         if(selectedFilter.equals(CannyEdgeDetection)) {
             System.out.print(CannyEdgeDetection);
-            Canny cannyAlgorithm = new Canny();
+            Canny cannyAlgorithm = new Canny(lowerThresholdValue, higherThresholdValue);
             output = cannyAlgorithm.detectEdges(bufferedImage);
         }
         else{
