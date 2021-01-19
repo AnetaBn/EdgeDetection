@@ -21,104 +21,19 @@ public class Canny {
 
 
     public File detectEdges(BufferedImage sourceImage) throws IOException {
-        //BufferedImage sourceImage = readImage(pathname);
         double[][][] pixelArray = convertToArray(sourceImage);
-        System.out.println("pixelArray " + String.valueOf(pixelArray.length) + ' ' + String.valueOf(pixelArray[0].length) + ' ' +String.valueOf(pixelArray[0][0].length));
-        print_stats(pixelArray);
-
         double[][] grayscaleArray = convertToGrayscale(pixelArray);
-        System.out.println("grayscaleArray " + String.valueOf(grayscaleArray.length) + ' ' + String.valueOf(grayscaleArray[0].length));
-        print_stats(grayscaleArray);
-
         double[][] denoisedArray = applyKernel(grayscaleArray, gaussianKernel);
-        System.out.println("denoisedArray " + String.valueOf(denoisedArray.length) + ' ' + String.valueOf(denoisedArray[0].length));
-        print_stats(denoisedArray);
         double[][] xGradient = applyKernel(denoisedArray, xGradientKernel);
-        System.out.println("xGradient " + String.valueOf(xGradient.length) + ' ' + String.valueOf(xGradient[0].length));
-        print_stats(xGradient);
-
         double[][] yGradient = applyKernel(denoisedArray, yGradientKernel);
-        System.out.println("yGradient " + String.valueOf(yGradient.length) + ' ' + String.valueOf(yGradient[0].length));
-        print_stats(yGradient);
-
         double[][] magnitude = computeMagnitude(xGradient, yGradient);
-        System.out.println("magnitude " + String.valueOf(magnitude.length) + ' ' + String.valueOf(magnitude[0].length));
-        print_stats(magnitude);
-
         int[][] direction = computeDirection(xGradient, yGradient);
-        System.out.println("direction " + String.valueOf(direction.length) + ' ' + String.valueOf(direction[0].length));
-        print_stats(direction);
-
         double[][] suppressedMagnitude = nonMaximumSuppression(direction, magnitude);
-        System.out.println("suppressedMagnitude " + String.valueOf(suppressedMagnitude.length) + ' ' + String.valueOf(suppressedMagnitude[0].length));
-        print_stats(suppressedMagnitude);
-
-
         double[][] thresholdFlags = setStrengthFlag(suppressedMagnitude);
-        System.out.println("thresholdFlags " + String.valueOf(thresholdFlags.length) + ' ' + String.valueOf(thresholdFlags[0].length));
-
         double[][] connected = checkWeakPixelConnection(thresholdFlags, suppressedMagnitude);
-        System.out.println("connected " + String.valueOf(connected.length) + ' ' + String.valueOf(connected[0].length));
-
         return createImageFromMatrix(connected);
-
-    }
-    private void print_stats(double[][] array){
-        double min = 1000000000000.0, max=0.0;
-        for (int i = 0; i < array.length; i++) {
-            for (int j = 0; j < array[0].length; j++) {
-                double value = array[i][j];
-                if (value < min){min = value;}
-                if (value > max){max = value;}
-            }
-        }
-        System.out.println("min " + String.valueOf(min) + " max " + String.valueOf(max));
-
-    }
-    private void print_stats(double[][][] array){
-        double min = 1000000000000.0, max=0.0;
-        for (int i = 0; i < array.length; i++) {
-            for (int j = 0; j < array[0].length; j++) {
-                for (int k = 0; k < array[0][0].length; k++) {
-                    double value = array[i][j][k];
-                    if (value < min) {
-                        min = value;
-                    }
-                    if (value > max) {
-                        max = value;
-                    }
-
-                }
-            }
-        }
-        System.out.println("min " + String.valueOf(min) + " max " + String.valueOf(max));
-
     }
 
-    private void print_stats(int[][] array){
-        int min = 1000000000, max=0;
-        for (int i = 0; i < array.length; i++) {
-            for (int j = 0; j < array[0].length; j++) {
-                int value = array[i][j];
-                if (value < min){min = value;}
-                if (value > max){max = value;}
-            }
-        }
-        System.out.println("min " + String.valueOf(min) + " max " + String.valueOf(max));
-
-    }
-
-    private BufferedImage readImage(String pathname) {
-        File imageFile = new File(pathname);
-        BufferedImage sourceImage = null;
-        try {
-            sourceImage = ImageIO.read(imageFile);
-        } catch (IOException e) {
-            System.err.println("Blad odczytu obrazka");
-            e.printStackTrace();
-        }
-        return sourceImage;
-    }
 
     private double[][][] convertToArray(BufferedImage image) {
         int width = image.getWidth();
@@ -148,27 +63,79 @@ public class Canny {
         }
         return grayscaleArray;
     }
+    private double[][] createZerosArray(int width, int height){
+        double[][] array = new double[width][height];
+        for (int i = 0; i < width; ++i) {
+            for (int j = 0; j < height; ++j) {
+                array[i][j] = 0;
+            }
+        }
+        return array;
+    }
 
-    private double[][] applyKernel(double[][] pixelArray, double[][] kernel){
-        int inputWidth = pixelArray.length;
-        int inputHeight = pixelArray[0].length;
+    //creates padding using a mirror reflection of the border pixels
+
+    private double[][] createPaddedArray(double[][] smallArray, double[][] kernel){
+        int smallArrayWidth = smallArray.length;
+        int smallArrayHeight = smallArray[0].length;
         int kernelWidth = kernel.length;
         int kernelHeight = kernel[0].length;
         int gapWidth = (int) ((kernelWidth) / 2.0);
         int gapHeight = (int) ((kernelHeight) / 2.0);
-        double[][] biggerPixelArray = createZerosArray(inputWidth + gapWidth*2, inputHeight + gapHeight*2);
+        int width = smallArrayWidth + 2*gapWidth;
+        int height = smallArrayHeight + 2*gapHeight;
 
-
-        for (int i = gapWidth; i < inputWidth + gapWidth; ++i) {
-            for (int j = gapHeight; j < inputHeight + gapHeight; ++j) {
-                biggerPixelArray[i][j] = pixelArray[i-gapWidth][j - gapHeight];
+        double[][] paddedArray = new double[width][height];
+        for(int i = 0; i < gapWidth; ++i){
+            for(int j = 0; j < gapHeight; ++j){
+                //top left corner
+                paddedArray[i][j] = smallArray[gapWidth-1-i][gapHeight-1-j];
+                //top right corner
+                paddedArray[width-i-1][j] = smallArray[(smallArrayWidth)-gapWidth+i][gapHeight-1-j];
+                //bottom left corner
+                paddedArray[i][height-j-1] = smallArray[gapWidth-i-1][(smallArrayHeight)-gapHeight+i-1];
+                //bottom right corner
+                paddedArray[width-i-1][height-j-1] =  smallArray[(smallArrayWidth)-gapWidth+i][(smallArrayHeight)-gapHeight+i];
             }
         }
-        double[][] afterConv = applyConvolution(biggerPixelArray, kernel);
-        if ((afterConv.length != pixelArray.length) || (afterConv[0].length != pixelArray[0].length)){
-            System.out.println(
-                    String.valueOf(afterConv.length) + " " + String.valueOf(pixelArray.length) + " " + String.valueOf(afterConv[0].length) + " " +String.valueOf(pixelArray.length));
+        //top
+        for(int i = gapWidth; i < smallArrayWidth + gapWidth; ++i) {
+            for (int j = 0; j < gapHeight; ++j) {
+                paddedArray[i][j] = smallArray[i-gapWidth][gapHeight-1-j];
+            }
         }
+        //left
+        for(int i = 0; i < gapWidth; ++i) {
+            for (int j = gapHeight; j < smallArrayHeight + gapHeight; ++j) {
+                paddedArray[i][j] = smallArray[gapWidth-1-i][j-gapHeight];
+            }
+        }
+        //right
+        for(int i = 0; i < gapWidth; ++i) {
+            for (int j = gapHeight; j < smallArrayHeight + gapHeight; ++j) {
+                paddedArray[width-1-i][j] = smallArray[smallArrayWidth-gapWidth-1+i][j-gapHeight];
+            }
+        }
+        //bottom
+        for(int i = gapWidth; i < smallArrayWidth + gapWidth; ++i) {
+            for (int j = 0; j < gapHeight; ++j) {
+                paddedArray[i][height-1-j] = smallArray[i-gapWidth][smallArrayHeight-gapHeight-1+j];
+            }
+        }
+        //inside
+        for(int i = gapWidth; i < smallArrayWidth + gapWidth; ++i) {
+            for (int j = gapHeight; j < smallArrayHeight + gapHeight; ++j) {
+                paddedArray[i][j] = smallArray[i-gapWidth][j-gapHeight];
+            }
+        }
+        return paddedArray;
+    }
+
+
+    private double[][] applyKernel(double[][] pixelArray, double[][] kernel){
+        double[][] biggerPixelArray = createPaddedArray(pixelArray, kernel);
+        double[][] afterConv = applyConvolution(biggerPixelArray, kernel);
+
         return afterConv;
 
     }
@@ -251,15 +218,6 @@ public class Canny {
             throw new RuntimeException("Zły argument pixelDirection: " + value);
         }
         return roundedDirection;
-    }
-    private double[][] createZerosArray(int width, int height){
-        double[][] array = new double[width][height];
-        for (int i = 0; i < width; ++i) {
-            for (int j = 0; j < height; ++j) {
-                array[i][j] = 0;
-            }
-        }
-        return array;
     }
 
     private double[][] nonMaximumSuppression(int[][] direction, double[][] magnitude) {

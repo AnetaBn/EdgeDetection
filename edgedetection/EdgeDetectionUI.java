@@ -131,11 +131,17 @@ public class EdgeDetectionUI {
                 BufferedImage bufferedImage = ImageIO.read(new File(sourceImage.getcurrentpath()));
                 double lowerThresholdValue = readThreshold(lowerThreshold.getText());
                 double higherThresholdValue = readThreshold(higherThreshold.getText());
-                if ((lowerThresholdValue == -1.0) && (filterChoice.getSelectedItem().equals(CannyEdgeDetection))) {
+                if ((lowerThresholdValue < 0 ) && (filterChoice.getSelectedItem().equals(CannyEdgeDetection))) {
                     lowerThresholdValue = edgeDetection.lowerThreshold;
                     lowerThreshold.setText(String.valueOf(lowerThresholdValue));
                 }
-                if ((higherThresholdValue == -1.0) && (filterChoice.getSelectedItem().equals(CannyEdgeDetection))) {
+                if ((higherThresholdValue < 0) && (filterChoice.getSelectedItem().equals(CannyEdgeDetection))) {
+                    higherThresholdValue = edgeDetection.higherThreshold;
+                    higherThreshold.setText(String.valueOf(higherThresholdValue));
+                }
+                if (lowerThresholdValue > higherThresholdValue){
+                    lowerThresholdValue = edgeDetection.lowerThreshold;
+                    lowerThreshold.setText(String.valueOf(lowerThresholdValue));
                     higherThresholdValue = edgeDetection.higherThreshold;
                     higherThreshold.setText(String.valueOf(higherThresholdValue));
                 }

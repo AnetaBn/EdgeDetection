@@ -37,7 +37,6 @@ public class EdgeDetection {
         double[][] mixedPixels = new double[bufferedImage.getWidth()][bufferedImage.getHeight()];
         File output = null;
         if(selectedFilter.equals(CannyEdgeDetection)) {
-            System.out.print(CannyEdgeDetection);
             Canny cannyAlgorithm = new Canny(lowerThresholdValue, higherThresholdValue);
             output = cannyAlgorithm.detectEdges(bufferedImage);
         }
