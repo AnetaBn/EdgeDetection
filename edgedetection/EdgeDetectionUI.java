@@ -7,23 +7,20 @@ import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.nio.DoubleBuffer;
-
 import static edgedetection.EdgeDetection.*;
-import static edgedetection.EdgeDetection.higherThreshold;
+
 
 public class EdgeDetectionUI {
-
     private static final int FRAME_WIDTH = 1200;
     private static final int FRAME_HEIGHT = 600;
     private static final Font sansSerifBold = new Font("SansSerif", Font.BOLD, 22);
     private  ImagePanel sourceImage = new ImagePanel(".\\Obraz1.jpg");
     private  ImagePanel destImage = new ImagePanel(".\\Obraz1.jpg");
-    private JPanel mainPanel;
+    private final JPanel mainPanel;
     private final EdgeDetection edgeDetection;
 
 
-    public EdgeDetectionUI() throws IOException {
+    public EdgeDetectionUI() {
 
         edgeDetection = new EdgeDetection();
         JFrame mainFrame = createMainFrame();
@@ -73,7 +70,7 @@ public class EdgeDetectionUI {
 
         JTextField higherThreshold= new JTextField();
         higherThreshold.setPreferredSize(new Dimension(250, 40));
-        higherThreshold.setFont(sansSerifBold);;
+        higherThreshold.setFont(sansSerifBold);
         higherThreshold.setText("Canny higher threshold");
         higherThreshold.setEditable(false);
         higherThreshold.addFocusListener(new FocusListener() {
@@ -85,7 +82,7 @@ public class EdgeDetectionUI {
 
         filterChoice.addActionListener (new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                if(((String) filterChoice.getSelectedItem()).equals(CannyEdgeDetection)){
+                if(filterChoice.getSelectedItem().equals(CannyEdgeDetection)){
                     lowerThreshold.setEditable(true);
                     higherThreshold.setEditable(true);
 
@@ -132,17 +129,17 @@ public class EdgeDetectionUI {
                 double lowerThresholdValue = readThreshold(lowerThreshold.getText());
                 double higherThresholdValue = readThreshold(higherThreshold.getText());
                 if ((lowerThresholdValue < 0 ) && (filterChoice.getSelectedItem().equals(CannyEdgeDetection))) {
-                    lowerThresholdValue = edgeDetection.lowerThreshold;
+                    lowerThresholdValue = EdgeDetection.lowerThreshold;
                     lowerThreshold.setText(String.valueOf(lowerThresholdValue));
                 }
                 if ((higherThresholdValue < 0) && (filterChoice.getSelectedItem().equals(CannyEdgeDetection))) {
-                    higherThresholdValue = edgeDetection.higherThreshold;
+                    higherThresholdValue = EdgeDetection.higherThreshold;
                     higherThreshold.setText(String.valueOf(higherThresholdValue));
                 }
                 if (lowerThresholdValue > higherThresholdValue){
-                    lowerThresholdValue = edgeDetection.lowerThreshold;
+                    lowerThresholdValue = EdgeDetection.lowerThreshold;
                     lowerThreshold.setText(String.valueOf(lowerThresholdValue));
-                    higherThresholdValue = edgeDetection.higherThreshold;
+                    higherThresholdValue = EdgeDetection.higherThreshold;
                     higherThreshold.setText(String.valueOf(higherThresholdValue));
                 }
                 File mixedFile = edgeDetection.detectEdges(bufferedImage, (String) filterChoice.getSelectedItem(),
@@ -163,8 +160,7 @@ public class EdgeDetectionUI {
 
     private double readThreshold(String text){
         try{
-            double doubleTreshold = Double.parseDouble(text);
-            return doubleTreshold;
+            return Double.parseDouble(text);
         } catch (NumberFormatException nfe)
         {
             return -1.0;
@@ -186,10 +182,10 @@ public class EdgeDetectionUI {
         return mainFrame;
     }
 
-    public class ImagePanel extends JPanel {
+    public static class ImagePanel extends JPanel {
 
         private BufferedImage image;
-        private String currentpath;
+        private final String currentpath;
         public File imageFile;
 
         public ImagePanel(String sourceImage) {
