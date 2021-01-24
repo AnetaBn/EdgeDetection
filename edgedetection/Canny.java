@@ -48,9 +48,9 @@ public class Canny {
         return createImageFromMatrix(connected);
     }
 
-    /** Metoda pozwalająca na konwersję obrazka na macierz zawierającą wartości pikseli
+    /** Metoda pozwalająca na konwersję obrazka na trójkanałową macierz zawierającą wartości pikseli
      * @param image obraz wejściowy
-     * @return macierz wartosci pikseli
+     * @return trójkanałowa macierz wartosci pikseli
      */
     private double[][][] convertToArray(BufferedImage image) {
         int width = image.getWidth();
@@ -101,8 +101,6 @@ public class Canny {
         }
         return array;
     }
-
-    //creates padding using a mirror reflection of the border pixels
 
     /**
      * Metoda pozwalająca na stworzenie obramowania przy pomocy odbicia lustrzanego pikseli granicznych obrazu
@@ -167,8 +165,7 @@ public class Canny {
     }
 
     /**
-     * Metoda pozwalająca na stworzenie paddingu i zaaplikowanie konwolucji
-     * poprzez wywołanie metody applyConvolution()
+     * Metoda pozwalająca na stworzenie paddingu i zaaplikowanie konwolucji dla całego obrazu
      * @param pixelArray macierz obrazu wejściowego
      * @param kernel maska, która ma zostać zaaplikowana
      * @return macierz obrazu po konwolucji
@@ -179,8 +176,8 @@ public class Canny {
     }
 
     /**
-     * Metoda pozwalająca zaaplikowanie konwolucji dzięki użyciu funkcji returnConvValue()
-     * @param input macierz obrazu wejściowego z uwzględnionym paddingiem
+     * Metoda pozwalająca zaaplikowanie konwolucji dla całego obrazu
+     * @param input macierz obrazu wejściowego
      * @param kernel maska, która ma zostać zaaplikowana
      * @return macierz będąca wynikiem konwolucji
      */
@@ -204,8 +201,8 @@ public class Canny {
      * Metoda pozwalająca na obliczenie wartości wartości konkretnego piksela,
      * będącego wynikiem splotu obrazu z maską
      * @param input macierz obrazu wejściowego z uwzględnionym paddingiem
-     * @param x wartość współrzędnej x dla obliczanego piksela
-     * @param y wartość współrzędnej y dla obliczanego piksela
+     * @param x wartość indeksu x dla obliczanego piksela
+     * @param y wartość indeksu y dla obliczanego piksela
      * @param kernel aplikowana maska
      * @return wartość piksela po splocie obrazu z maską
      */
@@ -244,7 +241,7 @@ public class Canny {
 
     /**
      * Metoda pozwalająca na zwrócenie kierunku krawędzi
-     * zaokrąglona do jednej z czterech możliwych wartości wynikowych metody roundDirection()
+     * zaokrąglona do jednej z czterech możliwych wartości - 0°, 45°, 90°, 135°.
      * @param xGradient macierz będąca wynikiem splotu macierzy z maską filtru horyzontalnego
      * @param yGradient macierz będąca wynikiem splotu macierzy z maską filtru wertykalnego
      * @return macierz kierunków krawędzi
@@ -284,10 +281,6 @@ public class Canny {
         }
         else if(absDirection >= 112.5 && absDirection < 157.5){
             roundedDirection = 135;
-        }
-        else{
-            String value = String.valueOf(pixelDirection);
-            throw new RuntimeException("Zły argument pixelDirection: " + value);
         }
         return roundedDirection;
     }
@@ -332,8 +325,8 @@ public class Canny {
 
     /**
      * Metoda pozwalająca na ustawienie jednej z trzech wartości "siły" piksela
-     * @param suppressedMagnitude
-     * @return wartość siły piksela:
+     * @param suppressedMagnitude macierz pocienionych krawędzi
+     * @return macierz wartości siły dla każdego piksela:
      * 1 dla piksela powyżej wyższego progu
      * 0.5 dla piksela powyżej niższego progu, a poniżej wyższego
      * 0 dla piksela poniżej niższego progu
@@ -359,8 +352,9 @@ public class Canny {
     }
 
     /**
-     * Metoda pozwalająca na zachowanie większej ciągłości krawędzi
-     * poprzez sprawdzenie czy wokół piksela oznaczonego jako 0.5 znajduje się piksel z siłą równą 1
+     * Metoda ustawiająca maksymalną jasność dla:
+     * - pikseli oznaczonych 1,
+     * - pikseli oznaczonych 0.5, które mają w najbliższym sąsiedztwie siłę 1.
      * @param thresholdFlags macierz flag dla pikseli obrazów
      * @param suppressedMagnitude macierz wartości pikseli po pocienieniu krawędzi
      * @return wartości jasności pikseli po sprawdzeniu ich połączeń
