@@ -9,18 +9,30 @@ import java.io.File;
 import java.io.IOException;
 import static edgedetection.EdgeDetection.*;
 
+/**
+ * Klasa zawierająca GUI programu, ActionListenery i wczytywanie obrazu
+ * @author Aneta Bień, Anna Plęs
+ */
 
 public class EdgeDetectionUI {
-    private static final int FRAME_WIDTH = 1200;
+
+    /**
+     * Zestaw argumentów final i deklaracja obiektów JPanel i ImagePanel
+     */
+
+    private static final int FRAME_WIDTH = 1400;
     private static final int FRAME_HEIGHT = 600;
     private static final Font sansSerifBold = new Font("SansSerif", Font.BOLD, 22);
     private  ImagePanel sourceImage = new ImagePanel(".\\Obraz1.jpg");
     private  ImagePanel destImage = new ImagePanel(".\\Obraz1.jpg");
-    private final JPanel mainPanel;
+    private JPanel mainPanel;
     private final EdgeDetection edgeDetection;
 
+    /**
+     * Metoda implementuje GUI
+     */
 
-    public EdgeDetectionUI() {
+    public EdgeDetectionUI() throws IOException {
 
         edgeDetection = new EdgeDetection();
         JFrame mainFrame = createMainFrame();
@@ -38,6 +50,11 @@ public class EdgeDetectionUI {
 
     }
 
+    /**
+     * Metoda implementująca JPanel
+     * @return NorthPanel Północny panel
+     */
+
     private JPanel fillNorthPanel() {
         JButton chooseButton = new JButton("Wybierz obraz");
         chooseButton.setFont(sansSerifBold);
@@ -45,20 +62,20 @@ public class EdgeDetectionUI {
         JPanel northPanel = new JPanel();
 
         JComboBox filterChoice = new JComboBox();
-        filterChoice.addItem(Horizontal);
-        filterChoice.addItem(Vertical);
-        filterChoice.addItem(SobelVertical);
-        filterChoice.addItem(SobelHorizontal);
-        filterChoice.addItem(ScharrVertical);
-        filterChoice.addItem(ScharrHorizontal);
-        filterChoice.addItem(CannyEdgeDetection);
+        filterChoice.addItem(HORIZONTAL);
+        filterChoice.addItem(VERTICAL);
+        filterChoice.addItem(SOBEL_VERTICAL);
+        filterChoice.addItem(SOBEL_HORIZONTAL);
+        filterChoice.addItem(SCHARR_VERTICAL);
+        filterChoice.addItem(SCHARR_HORIZONTAL);
+        filterChoice.addItem(CANNY_EDGE_DETECTION);
         filterChoice.setFont(sansSerifBold);
 
 
         JTextField lowerThreshold= new JTextField();
         lowerThreshold.setPreferredSize(new Dimension(250, 40));
         lowerThreshold.setFont(sansSerifBold);
-        lowerThreshold.setText("Canny lower threshold");
+        lowerThreshold.setText("Dolny próg (Canny)");
         lowerThreshold.setEditable(false);
 
         lowerThreshold.addFocusListener(new FocusListener() {
@@ -71,8 +88,10 @@ public class EdgeDetectionUI {
         JTextField higherThreshold= new JTextField();
         higherThreshold.setPreferredSize(new Dimension(250, 40));
         higherThreshold.setFont(sansSerifBold);
-        higherThreshold.setText("Canny higher threshold");
+        higherThreshold.setText("Górny próg (Canny)");
         higherThreshold.setEditable(false);
+
+
         higherThreshold.addFocusListener(new FocusListener() {
             @Override public void focusLost(final FocusEvent pE) {}
             @Override public void focusGained(final FocusEvent pE) {
@@ -80,9 +99,10 @@ public class EdgeDetectionUI {
             }
         });
 
+
         filterChoice.addActionListener (new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                if(filterChoice.getSelectedItem().equals(CannyEdgeDetection)){
+                if(((String) filterChoice.getSelectedItem()).equals(CANNY_EDGE_DETECTION)){
                     lowerThreshold.setEditable(true);
                     higherThreshold.setEditable(true);
 
@@ -90,8 +110,8 @@ public class EdgeDetectionUI {
                 else{
                     lowerThreshold.setEditable(false);
                     higherThreshold.setEditable(false);
-                    lowerThreshold.setText("Canny lower threshold");
-                    higherThreshold.setText("Canny higher threshold");
+                    lowerThreshold.setText("Dolny próg (Canny)");
+                    higherThreshold.setText("Górny próg (Canny)");
                 }
             }
         });
@@ -104,6 +124,7 @@ public class EdgeDetectionUI {
         northPanel.add(lowerThreshold);
         northPanel.add(higherThreshold);
         northPanel.add(detect);
+
 
         chooseButton.addActionListener(event -> {
             JFileChooser chooser = new JFileChooser();
@@ -128,18 +149,18 @@ public class EdgeDetectionUI {
                 BufferedImage bufferedImage = ImageIO.read(new File(sourceImage.getcurrentpath()));
                 double lowerThresholdValue = readThreshold(lowerThreshold.getText());
                 double higherThresholdValue = readThreshold(higherThreshold.getText());
-                if ((lowerThresholdValue < 0 ) && (filterChoice.getSelectedItem().equals(CannyEdgeDetection))) {
-                    lowerThresholdValue = EdgeDetection.lowerThreshold;
+                if ((lowerThresholdValue < 0 ) && (filterChoice.getSelectedItem().equals(CANNY_EDGE_DETECTION))) {
+                    lowerThresholdValue = LOWER_THRESHOLD;
                     lowerThreshold.setText(String.valueOf(lowerThresholdValue));
                 }
-                if ((higherThresholdValue < 0) && (filterChoice.getSelectedItem().equals(CannyEdgeDetection))) {
-                    higherThresholdValue = EdgeDetection.higherThreshold;
+                if ((higherThresholdValue < 0) && (filterChoice.getSelectedItem().equals(CANNY_EDGE_DETECTION))) {
+                    higherThresholdValue = HIGHER_THRESHOLD;
                     higherThreshold.setText(String.valueOf(higherThresholdValue));
                 }
                 if (lowerThresholdValue > higherThresholdValue){
-                    lowerThresholdValue = EdgeDetection.lowerThreshold;
+                    lowerThresholdValue = LOWER_THRESHOLD;
                     lowerThreshold.setText(String.valueOf(lowerThresholdValue));
-                    higherThresholdValue = EdgeDetection.higherThreshold;
+                    higherThresholdValue = HIGHER_THRESHOLD;
                     higherThreshold.setText(String.valueOf(higherThresholdValue));
                 }
                 File mixedFile = edgeDetection.detectEdges(bufferedImage, (String) filterChoice.getSelectedItem(),
@@ -158,6 +179,12 @@ public class EdgeDetectionUI {
         return northPanel;
     }
 
+    /**
+     * Metoda pobiera wartości progów dla algorytmu Canny'ego
+     * @return Zwraca wartość -1 w przypadku wystapienia wyjątku
+     * @exception IOException W przypadku źle podanej wartości
+     */
+
     private double readThreshold(String text){
         try{
             return Double.parseDouble(text);
@@ -166,6 +193,12 @@ public class EdgeDetectionUI {
             return -1.0;
         }
     }
+
+    /**
+     * Metoda tworzy JFrame i implementuje WindowListener
+     * @return mainFrame Zwraca obiekt JFrame
+     */
+
     private JFrame createMainFrame() {
         JFrame mainFrame = new JFrame();
         mainFrame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
@@ -182,11 +215,20 @@ public class EdgeDetectionUI {
         return mainFrame;
     }
 
-    public static class ImagePanel extends JPanel {
+    /**
+     * Klasa implementuje panel wyswietlania obrazu i sposób wczytywania obrazu
+     */
+
+    public class ImagePanel extends JPanel {
 
         private BufferedImage image;
-        private final String currentpath;
+        private String currentpath;
         public File imageFile;
+
+        /**
+         * Metoda obsługuje odczyt obrazka
+         * @exception IOException W przypadku błędu odczytu obrazka
+         */
 
         public ImagePanel(String sourceImage) {
             super();
@@ -205,9 +247,18 @@ public class EdgeDetectionUI {
 
         }
 
+        /**
+         * Metoda pobiera ścieżkę do pliku
+         * @return currentpath ścieżka do pliku
+         */
+
         public String getcurrentpath(){
             return currentpath;
         }
+
+        /**
+         * Metoda rysuje obiekt Component
+         */
 
         @Override
         public void paintComponent(Graphics g) {

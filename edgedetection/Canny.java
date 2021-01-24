@@ -7,6 +7,10 @@ import java.io.File;
 import java.io.IOException;
 import java.time.LocalTime;
 
+/**
+ * Klasa przetwarzająca obrazy za pomocą algorytmu Canny'ego
+ * @author Anna Plęs
+ */
 public class Canny {
     private static final double[][] xGradientKernel = {{-1, 0, 1}, {-2, 0, 2}, {-1, 0, 1}};
     private static final double[][] yGradientKernel = {{1, 2, 1}, {0, 0, 0}, {-1, -2, -1}};
@@ -14,12 +18,22 @@ public class Canny {
     private double lowerThreshold;
     private double higherThreshold;
 
+    /**
+     * Metoda pozwalająca na ustawienie wartosci wyzszego i nizszego progu klasy Canny
+     * @param lowerThresholdValue wartość niższego progu
+     * @param higherThresholdValue wartość wyższego progu
+     */
     public Canny(double lowerThresholdValue, double higherThresholdValue) {
         this.lowerThreshold = lowerThresholdValue;
         this.higherThreshold = higherThresholdValue;
     }
 
-
+    /**
+     * Główna metoda będąca ciągiem kolejnych kroków algorytmu
+     * @param sourceImage wczytany obraz wejsciowy
+     * @return obraz przetworzony przez algorytm
+     * @throws IOException błąd wejścia/wyjścia na jednym z etapów algorytmu
+     */
     public File detectEdges(BufferedImage sourceImage) throws IOException {
         double[][][] pixelArray = convertToArray(sourceImage);
         double[][] grayscaleArray = convertToGrayscale(pixelArray);
@@ -34,7 +48,10 @@ public class Canny {
         return createImageFromMatrix(connected);
     }
 
-
+    /** Metoda pozwalająca na konwersję obrazka na macierz zawierającą wartości pikseli
+     * @param image obraz wejściowy
+     * @return macierz wartosci pikseli
+     */
     private double[][][] convertToArray(BufferedImage image) {
         int width = image.getWidth();
         int height = image.getHeight();
@@ -51,6 +68,11 @@ public class Canny {
         return pixelArray;
     }
 
+    /**
+     * Metoda pozwalająca na konwersję obrazu do skali szarości
+     * @param pixelArray trójkanałowa macierz wartości pikseli
+     * @return macierz wartości pikseli w skali szarości
+     */
     private double[][] convertToGrayscale(double[][][] pixelArray){
         int width = pixelArray.length;
         int height = pixelArray[0].length;
@@ -63,6 +85,13 @@ public class Canny {
         }
         return grayscaleArray;
     }
+
+    /**
+     * Metoda pozwalająca na tworzenie macierzy wypełnionej zerami
+     * @param width pożądana szerokość macierzy
+     * @param height pożądana wysokość macierzy
+     * @return stworzona macierz wypełniona zerami
+     */
     private double[][] createZerosArray(int width, int height){
         double[][] array = new double[width][height];
         for (int i = 0; i < width; ++i) {
@@ -75,6 +104,12 @@ public class Canny {
 
     //creates padding using a mirror reflection of the border pixels
 
+    /**
+     * Metoda pozwalająca na stworzenie obramowania przy pomocy odbicia lustrzanego pikseli granicznych obrazu
+     * @param smallArray macierz obrazka mającego zostać poddanego działaniu metody
+     * @param kernel jądro maski
+     * @return macierz wejściowa o wymiarach macierzy wejściowej + wymiar maski - 1
+     */
     private double[][] createPaddedArray(double[][] smallArray, double[][] kernel){
         int smallArrayWidth = smallArray.length;
         int smallArrayHeight = smallArray[0].length;
@@ -88,41 +123,41 @@ public class Canny {
         double[][] paddedArray = new double[width][height];
         for(int i = 0; i < gapWidth; ++i){
             for(int j = 0; j < gapHeight; ++j){
-                //top left corner
+                //górny lewy róg
                 paddedArray[i][j] = smallArray[gapWidth-1-i][gapHeight-1-j];
-                //top right corner
+                //górny prawy róg
                 paddedArray[width-i-1][j] = smallArray[(smallArrayWidth)-gapWidth+i][gapHeight-1-j];
-                //bottom left corner
+                //dolny lewy róg
                 paddedArray[i][height-j-1] = smallArray[gapWidth-i-1][(smallArrayHeight)-gapHeight+i-1];
-                //bottom right corner
+                //dolny prawy róg
                 paddedArray[width-i-1][height-j-1] =  smallArray[(smallArrayWidth)-gapWidth+i][(smallArrayHeight)-gapHeight+i];
             }
         }
-        //top
+        //górny pas
         for(int i = gapWidth; i < smallArrayWidth + gapWidth; ++i) {
             for (int j = 0; j < gapHeight; ++j) {
                 paddedArray[i][j] = smallArray[i-gapWidth][gapHeight-1-j];
             }
         }
-        //left
+        //lewy pas
         for(int i = 0; i < gapWidth; ++i) {
             for (int j = gapHeight; j < smallArrayHeight + gapHeight; ++j) {
                 paddedArray[i][j] = smallArray[gapWidth-1-i][j-gapHeight];
             }
         }
-        //right
+        //prawy pas
         for(int i = 0; i < gapWidth; ++i) {
             for (int j = gapHeight; j < smallArrayHeight + gapHeight; ++j) {
                 paddedArray[width-1-i][j] = smallArray[smallArrayWidth-gapWidth-1+i][j-gapHeight];
             }
         }
-        //bottom
+        //dolny pas
         for(int i = gapWidth; i < smallArrayWidth + gapWidth; ++i) {
             for (int j = 0; j < gapHeight; ++j) {
                 paddedArray[i][height-1-j] = smallArray[i-gapWidth][smallArrayHeight-gapHeight-1+j];
             }
         }
-        //inside
+        //wnętrze obrazka
         for(int i = gapWidth; i < smallArrayWidth + gapWidth; ++i) {
             for (int j = gapHeight; j < smallArrayHeight + gapHeight; ++j) {
                 paddedArray[i][j] = smallArray[i-gapWidth][j-gapHeight];
@@ -131,14 +166,24 @@ public class Canny {
         return paddedArray;
     }
 
-
+    /**
+     * Metoda pozwalająca na stworzenie paddingu i zaaplikowanie konwolucji
+     * poprzez wywołanie metody applyConvolution()
+     * @param pixelArray macierz obrazu wejściowego
+     * @param kernel maska, która ma zostać zaaplikowana
+     * @return macierz obrazu po konwolucji
+     */
     private double[][] applyKernel(double[][] pixelArray, double[][] kernel){
         double[][] biggerPixelArray = createPaddedArray(pixelArray, kernel);
-        double[][] afterConv = applyConvolution(biggerPixelArray, kernel);
-
-        return afterConv;
-
+        return applyConvolution(biggerPixelArray, kernel);
     }
+
+    /**
+     * Metoda pozwalająca zaaplikowanie konwolucji dzięki użyciu funkcji returnConvValue()
+     * @param input macierz obrazu wejściowego z uwzględnionym paddingiem
+     * @param kernel maska, która ma zostać zaaplikowana
+     * @return macierz będąca wynikiem konwolucji
+     */
     private double[][] applyConvolution(double[][] input, double[][] kernel){
         int width = input.length;
         int height = input[0].length;
@@ -149,12 +194,21 @@ public class Canny {
         double[][] output = new double[width - 2*gapWidth][height - 2*gapHeight];
         for (int i = gapWidth; i < width - gapWidth; ++i) {
             for (int j = gapHeight; j < height - gapHeight; ++j) {
-                output[i-gapWidth][j-gapHeight] = returnConvValue(input, i,j, kernel);
+                output[i-gapWidth][j-gapHeight] = returnConvValue(input, i, j, kernel);
             }
         }
-
         return output;
     }
+
+    /**
+     * Metoda pozwalająca na obliczenie wartości wartości konkretnego piksela,
+     * będącego wynikiem splotu obrazu z maską
+     * @param input macierz obrazu wejściowego z uwzględnionym paddingiem
+     * @param x wartość współrzędnej x dla obliczanego piksela
+     * @param y wartość współrzędnej y dla obliczanego piksela
+     * @param kernel aplikowana maska
+     * @return wartość piksela po splocie obrazu z maską
+     */
     private double returnConvValue(double[][] input, int x, int y, double[][] kernel){
         double output = 0;
         int kernelWidth = kernel.length;
@@ -168,6 +222,13 @@ public class Canny {
         }
         return output;
     }
+
+    /**
+     * Metoda pozwalająca na obliczenie natężenia gradientu obrazu
+     * @param xGradient macierz będąca wynikiem splotu macierzy z maską filtru horyzontalnego
+     * @param yGradient macierz będąca wynikiem splotu macierzy z maską filtru wertykalnego
+     * @return macierz natężeń gradietu obrazu
+     */
     private double[][] computeMagnitude(double[][] xGradient, double[][] yGradient){
         int width = xGradient.length;
         int height = xGradient[0].length;
@@ -181,7 +242,13 @@ public class Canny {
         return magnitude;
     }
 
-    //atan2 returns value from -pi, pi
+    /**
+     * Metoda pozwalająca na zwrócenie kierunku krawędzi
+     * zaokrąglona do jednej z czterech możliwych wartości wynikowych metody roundDirection()
+     * @param xGradient macierz będąca wynikiem splotu macierzy z maską filtru horyzontalnego
+     * @param yGradient macierz będąca wynikiem splotu macierzy z maską filtru wertykalnego
+     * @return macierz kierunków krawędzi
+     */
     private int[][] computeDirection(double[][] xGradient, double[][] yGradient){
         int width = xGradient.length;
         int height = xGradient[0].length;
@@ -197,6 +264,11 @@ public class Canny {
         return direction;
     }
 
+    /**
+     * Metoda pozwalająca na zaokrąglanie kierunków krawędzi
+     * @param pixelDirection wartość kierunku dla danego poksela z zakresu od -pi do pi
+     * @return jedna z czterech możliwych wartości kierunku
+     */
     private int roundDirection(double pixelDirection){
         double absDirection = Math.abs(pixelDirection);
         int roundedDirection = 0;
@@ -220,16 +292,16 @@ public class Canny {
         return roundedDirection;
     }
 
+    /**
+     * Metoda pozwalająca na pocienianie wykrytych krawędzi, poprzez zerowanie pikseli niemaksymalnych
+     * @param direction macierz wartości kierunków krawędzi
+     * @param magnitude macierz natężeń gradietu obrazu
+     * @return macierz pocienionych krawędzi
+     */
     private double[][] nonMaximumSuppression(int[][] direction, double[][] magnitude) {
         int width = magnitude.length;
         int height = magnitude[0].length;
         double[][] suppressedMagnitude = createZerosArray(width, height);
-
-        for (int i = 1; i < width-1; ++i) {
-            for (int j = 1; j < height-1; ++j) {
-                suppressedMagnitude[i][j] = magnitude[i][j];
-            }
-        }
 
         for (int i = 1; i < width-1; ++i) {
             for (int j = 1; j < height-1; ++j) {
@@ -258,9 +330,14 @@ public class Canny {
         return suppressedMagnitude;
     }
 
-    //flag values: strong pixel magnitude (above higher threshold) = 1,
-    //weak pixel (above lower threshold) = 0,5
-    //suppressed pixel (under lower threshold) = 0
+    /**
+     * Metoda pozwalająca na ustawienie jednej z trzech wartości "siły" piksela
+     * @param suppressedMagnitude
+     * @return wartość siły piksela:
+     * 1 dla piksela powyżej wyższego progu
+     * 0.5 dla piksela powyżej niższego progu, a poniżej wyższego
+     * 0 dla piksela poniżej niższego progu
+     */
     private double[][] setStrengthFlag(double[][] suppressedMagnitude){
         int width = suppressedMagnitude.length;
         int height = suppressedMagnitude[0].length;
@@ -281,6 +358,13 @@ public class Canny {
         return thresholdFlags;
     }
 
+    /**
+     * Metoda pozwalająca na zachowanie większej ciągłości krawędzi
+     * poprzez sprawdzenie czy wokół piksela oznaczonego jako 0.5 znajduje się piksel z siłą równą 1
+     * @param thresholdFlags macierz flag dla pikseli obrazów
+     * @param suppressedMagnitude macierz wartości pikseli po pocienieniu krawędzi
+     * @return wartości jasności pikseli po sprawdzeniu ich połączeń
+     */
     private double[][] checkWeakPixelConnection(double[][] thresholdFlags, double[][] suppressedMagnitude) {
         int width = suppressedMagnitude.length;
         int height = suppressedMagnitude[0].length;
@@ -321,6 +405,12 @@ public class Canny {
         return connectedPixels;
     }
 
+    /**
+     * Metoda pozwalająca na stworzenie pliku obrazu z macierzy wartości pikseli
+     * @param array macierz wartości pikseli
+     * @return plik stworzonego obrazu
+     * @throws IOException błąd na etapie zapisu pliku
+     */
     private File createImageFromMatrix(double[][] array) throws IOException {
         int width = array.length;
         int height = array[0].length;
